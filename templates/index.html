@@ -5,51 +5,54 @@
 </head>
 <body>
     <h1>音声テキスト化</h1>
-    <button id="startRecording">録音開始</button>
-    <button id="stopRecording" disabled>録音停止</button>
+    <img id="toggleRecording" src="mic_ready.png" data-state="inactive" style="cursor: pointer;">
     <div id="transcription"></div>
 
     <script>
-        const startButton = document.getElementById('startRecording');
-        const stopButton = document.getElementById('stopRecording');
+        const toggleButton = document.getElementById('toggleRecording');
         const transcriptionDiv = document.getElementById('transcription');
         let mediaRecorder;
         let audioChunks = [];
 
-        startButton.addEventListener('click', async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
+        toggleButton.addEventListener('click', async () => {
+            const currentState = toggleButton.getAttribute('data-state');
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
+            if (currentState === 'inactive') {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
 
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const formData = new FormData();
-                formData.append('audio', audioBlob);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
 
-                const response = await fetch('/upload-audio', {
-                    method: 'POST',
-                    body: formData,
-                });
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob);
 
-                const data = await response.json();
-                transcriptionDiv.innerHTML = data.transcription;
-            };
+                    const response = await fetch('/upload-audio', {
+                        method: 'POST',
+                        body: formData,
+                    });
 
-            startButton.disabled = true;
-            stopButton.disabled = false;
-            audioChunks = [];
-            mediaRecorder.start();
-        });
+                    const data = await response.json();
+                    transcriptionDiv.innerHTML = data.transcription;
+                    toggleButton.src = 'mic_ready.png';
+                    toggleButton.setAttribute('data-state', 'inactive');
+                    toggleButton.style.cursor = 'pointer';
+                };
 
-        stopButton.addEventListener('click', () => {
-            mediaRecorder.stop();
-            startButton.disabled = false;
-            stopButton.disabled = true;
+                toggleButton.src = 'mic_recording.png';
+                toggleButton.setAttribute('data-state', 'active');
+                audioChunks = [];
+                mediaRecorder.start();
+            } else if (currentState === 'active') {
+                mediaRecorder.stop();
+                toggleButton.src = 'mic_disable.png';
+                toggleButton.style.cursor = 'not-allowed';
+            }
         });
     </script>
 </body>
