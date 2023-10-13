@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 .gitignore
 config.py
+templates/.DS_Store
