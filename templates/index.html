@@ -13,8 +13,6 @@
         const transcriptionDiv = document.getElementById('transcription');
         let mediaRecorder;
         let audioChunks = [];
-        let silenceTimer;
-        const SILENCE_DURATION = 1000; // 無音継続時間（ミリ秒）
 
         toggleButton.addEventListener('click', async () => {
             const currentState = toggleButton.getAttribute('data-state');
@@ -31,18 +29,14 @@
                 const speechEvents = hark(stream, options);
                 speechEvents.on('stopped_speaking', function() {
                     console.log('stopped_speaking');
-                    silenceTimer = setTimeout(() => {
-                        clearTimeout(silenceTimer);
-                        mediaRecorder.stop();
-                        toggleButton.src = 'mic_disable.png';
-                        toggleButton.style.cursor = 'not-allowed';
-                    }, SILENCE_DURATION);
                     speechEvents.off('stopped_speaking');
+                    mediaRecorder.stop();
+                    toggleButton.src = 'mic_disable.png';
+                    toggleButton.style.cursor = 'not-allowed';
                 });
 
                 speechEvents.on('speaking', function() {
                     console.log('speaking');
-                    clearTimeout(silenceTimer);
                 });
 
                 /*
